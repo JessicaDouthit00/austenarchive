@@ -443,11 +443,9 @@ tailwind.config = {
       </div>
       <div class="sepia-line my-8 max-w-sm mx-auto"></div>
       <p class="font-garamond italic text-xl md:text-2xl text-parchment opacity-70 mb-3" style="animation: fadeUp 1s ease 0.4s forwards; opacity: 0;">
-        An Examination of Society and &amp; Romance
+        An Examination of Society and Romance
       </p>
-      <blockquote class="font-garamond italic text-base md:text-lg max-w-xl mx-auto mt-6 mb-10" style="color: rgba(200,169,110,0.6); animation: fadeUp 1s ease 0.6s forwards; opacity: 0; line-height: 1.9;">
-        "The person, be it gentleman or lady, who has not pleasure in a good novel,<br class="hidden md:block"> must be intolerably stupid."
-      </blockquote>
+      
       <button onclick="document.getElementById('novels-anchor').scrollIntoView({behavior:'smooth'})" class="inline-block font-cinzel text-xs tracking-widest uppercase px-8 py-4 border border-sepia text-sepia hover:bg-sepia hover:text-ink transition-all duration-500" style="animation: fadeUp 1s ease 0.8s forwards; opacity: 0;">
         Enter the Archive
       </button>
@@ -574,10 +572,10 @@ tailwind.config = {
 // Paths follow the pattern: docs/{bookId}/pdf{n}.pdf
 // ------------------------------------------------------------
 const PDF_SLOTS = [
-  { key: 'pdf1', label: 'Primary Text',       sub: 'Original source document',  prefilled: true  },
-  { key: 'pdf2', label: 'Critical Essay',     sub: 'Scholarly analysis',         prefilled: true  },
-  { key: 'pdf3', label: 'Study Guide',        sub: 'Reading companion',          prefilled: false },
-  { key: 'pdf4', label: 'Historical Context', sub: 'Period & background',        prefilled: false },
+  { key: 'pdf1', label: 'Scholarly Article',       sub: 'See author and title below',  prefilled: true  },
+  { key: 'pdf2', label: 'Scholarly Article',     sub: 'See author and title below',         prefilled: true  },
+  { key: 'pdf3', label: 'Space for an artilce of your choice',        sub: 'Upload as needed',          prefilled: false },
+  { key: 'pdf4', label: 'Space for an article of your choice', sub: 'Upload as needed',        prefilled: false },
 ];
 
 // ------------------------------------------------------------
