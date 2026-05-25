@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Austen Archive</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Cinzel:wght@400;600;700;900&family=Cormorant+SC:wght@300;400;600&display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: {
+        cinzel: ['Cinzel', 'serif'],
+        garamond: ['EB Garamond', 'serif'],
+        sc: ['Cormorant SC', 'serif'],
+      },
+      colors: {
+        ink: '#0a0905',
+        parchment: '#e8dcc8',
+        sepia: '#c8a96e',
+        'sepia-light': '#d4b97e',
+        'sepia-dark': '#8a6a35',
+        'smoke': '#1a1710',
+        'ash': '#2a2720',
+        'ember': '#a0522d',
+      },
+    }
+  }
+}
+</script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: #0a0905; color: #e8dcc8; font-family: 'EB Garamond', serif; overflow-x: hidden; }
+
+  ::selection { background: rgba(200, 169, 110, 0.3); color: #e8dcc8; }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: #0a0905; }
+  ::-webkit-scrollbar-thumb { background: #8a6a35; border-radius: 2px; }
+
+  .noise-overlay {
+    position: fixed; inset: 0; pointer-events: none; z-index: 9998; opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .hero-bg {
+    background: radial-gradient(ellipse at 50% 0%, #1e1a12 0%, #0a0905 60%);
+    position: relative;
+  }
+  .hero-bg::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 50%, rgba(160, 82, 45, 0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 50%, rgba(200, 169, 110, 0.06) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  .sepia-line {
+    height: 1px;
+    background: linear-gradient(to right, transparent, #c8a96e, transparent);
+  }
+
+  @keyframes fadeUp {
+    0% { opacity: 0; transform: translateY(30px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  .book-entry {
+    display: grid;
+    grid-template-columns: 80px 1fr auto;
+    align-items: center;
+    gap: 2rem;
+    padding: 1.8rem 0;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(200, 169, 110, 0.08);
+    transition: all 0.4s ease;
+    position: relative;
+    text-decoration: none;
+    color: inherit;
+  }
+  .book-entry::before {
+    content: '';
+    position: absolute; left: -2rem; top: 0; bottom: 0; width: 2px;
+    background: linear-gradient(to bottom, transparent, #c8a96e, transparent);
+    transform: scaleY(0);
+    transition: transform 0.4s ease;
+  }
+  .book-entry:hover::before { transform: scaleY(1); }
+  .book-entry:hover .book-title-text { color: #c8a96e; }
+  .book-entry:hover .book-number { color: #c8a96e; opacity: 1; }
+  .book-entry:hover .arrow-icon { transform: translateX(6px); opacity: 1; }
+
+  .book-number {
+    font-family: 'Cinzel', serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    color: #6a6055;
+    opacity: 0.7;
+    transition: all 0.4s;
+    text-align: right;
+    line-height: 1.2;
+  }
+
+  .book-title-text {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(1.1rem, 2vw, 1.5rem);
+    font-weight: 400;
+    letter-spacing: 0.05em;
+    color: #e8dcc8;
+    transition: color 0.4s;
+  }
+
+  .book-meta {
+    font-family: 'EB Garamond', serif;
+    font-style: italic;
+    font-size: 0.9rem;
+    color: #6a6055;
+    margin-top: 0.3rem;
+  }
+
+  .arrow-icon {
+    color: #c8a96e;
+    opacity: 0;
+    transition: all 0.4s;
+    font-size: 1.2rem;
+  }
+
+  .theme-pill {
+    display: inline-block;
+    padding: 0.35rem 0.9rem;
+    border: 1px solid rgba(200, 169, 110, 0.3);
+    font-family: 'Cormorant SC', serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    color: #c8a96e;
+    margin: 0.25rem;
+  }
+
+  .nav-link {
+    font-family: 'Cormorant SC', serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    color: #6a6055;
+    text-decoration: none;
+    transition: color 0.3s;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .nav-link:hover { color: #c8a96e; }
+
+  .hero-ornament {
+    position: absolute;
+    opacity: 0.04;
+    pointer-events: none;
+  }
+
+  .footer-rule {
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(200, 169, 110, 0.3), transparent);
+    margin: 2rem 0;
+  }
+
+  /* VIEW SYSTEM */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* BOOK PAGE */
+  .book-page-header {
+    background: linear-gradient(to bottom, #13110b, #0a0905);
+    padding: 8rem 2rem 3rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .book-page-header::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse at 30% 50%, rgba(160, 82, 45, 0.07) 0%, transparent 60%),
+      radial-gradient(ellipse at 70% 50%, rgba(200, 169, 110, 0.05) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: 'Cinzel', serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #6a6055;
+    cursor: pointer;
+    transition: color 0.3s;
+    background: none;
+    border: none;
+    padding: 0;
+    text-decoration: none;
+  }
+  .back-btn:hover { color: #c8a96e; }
+
+  /* PDF GRID */
+  .pdf-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+  @media (max-width: 900px) {
+    .pdf-grid { grid-template-columns: 1fr; }
+  }
+
+  .pdf-card {
+    background: #0f0d08;
+    border: 1px solid rgba(200, 169, 110, 0.15);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+  .pdf-card:hover { border-color: rgba(200, 169, 110, 0.35); }
+
+  .pdf-card-header {
+    padding: 1.2rem 1.5rem;
+    border-bottom: 1px solid rgba(200, 169, 110, 0.1);
+    background: rgba(200, 169, 110, 0.03);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .pdf-doc-icon {
+    width: 32px;
+    height: 38px;
+    border: 1px solid rgba(200, 169, 110, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-family: 'Cinzel', serif;
+    font-size: 0.5rem;
+    letter-spacing: 0.05em;
+    color: #c8a96e;
+    position: relative;
+  }
+  .pdf-doc-icon::before {
+    content: '';
+    position: absolute;
+    top: -1px; right: -1px;
+    width: 0; height: 0;
+    border-left: 8px solid transparent;
+    border-bottom: 8px solid #0f0d08;
+    border-top: 8px solid rgba(200, 169, 110, 0.3);
+    border-right: 8px solid rgba(200, 169, 110, 0.3);
+  }
+
+  .pdf-label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #c8a96e;
+  }
+
+  .pdf-sublabel {
+    font-family: 'EB Garamond', serif;
+    font-style: italic;
+    font-size: 0.85rem;
+    color: #5a5548;
+    margin-top: 0.15rem;
+  }
+
+  .pdf-embed-container {
+    position: relative;
+    flex: 1;
+    min-height: 460px;
+    background: #08070a;
+  }
+
+  .pdf-embed-container iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+    min-height: 460px;
+  }
+
+  .pdf-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.2rem;
+    padding: 2rem;
+    text-align: center;
+  }
+
+  .pdf-placeholder-icon {
+    width: 56px;
+    height: 68px;
+    border: 1px solid rgba(200, 169, 110, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  .pdf-placeholder-icon::after {
+    content: '';
+    position: absolute;
+    top: -1px; right: -1px;
+    border-left: 14px solid transparent;
+    border-bottom: 14px solid #08070a;
+    border-top: 14px solid rgba(200, 169, 110, 0.2);
+    border-right: 14px solid rgba(200, 169, 110, 0.2);
+  }
+
+  .pdf-placeholder-title {
+    font-family: 'Cinzel', serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    color: #4a4540;
+    text-transform: uppercase;
+  }
+
+  .pdf-placeholder-desc {
+    font-family: 'EB Garamond', serif;
+    font-style: italic;
+    font-size: 0.9rem;
+    color: #3a3530;
+    line-height: 1.6;
+    max-width: 200px;
+  }
+
+  .pdf-url-input-row {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid rgba(200, 169, 110, 0.08);
+    display: flex;
+    gap: 0.5rem;
+    background: rgba(0,0,0,0.3);
+  }
+
+  .pdf-url-input {
+    flex: 1;
+    background: transparent;
+    border: 1px solid rgba(200, 169, 110, 0.15);
+    color: #8a8078;
+    font-family: 'EB Garamond', serif;
+    font-size: 0.85rem;
+    padding: 0.4rem 0.75rem;
+    outline: none;
+    transition: border-color 0.3s;
+  }
+  .pdf-url-input::placeholder { color: #3a3530; font-style: italic; }
+  .pdf-url-input:focus { border-color: rgba(200, 169, 110, 0.35); color: #c8a96e; }
+
+  .pdf-load-btn {
+    background: transparent;
+    border: 1px solid rgba(200, 169, 110, 0.25);
+    color: #8a6a35;
+    font-family: 'Cinzel', serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 0.4rem 0.8rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    white-space: nowrap;
+  }
+  .pdf-load-btn:hover { border-color: #c8a96e; color: #c8a96e; }
+
+  .stat-block {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: rgba(200, 169, 110, 0.1);
+    margin: 1.5rem 0;
+  }
+  .stat-item {
+    background: #0a0905;
+    padding: 1rem;
+    text-align: center;
+  }
+  .stat-value {
+    font-family: 'Cinzel', serif;
+    font-size: 1.1rem;
+    color: #c8a96e;
+  }
+  .stat-label {
+    font-family: 'EB Garamond', serif;
+    font-size: 0.8rem;
+    color: #6a6055;
+    font-style: italic;
+    margin-top: 0.2rem;
+  }
+
+  @media (max-width: 640px) {
+    .book-entry {
+      grid-template-columns: 50px 1fr auto;
+      gap: 1rem;
+      padding: 1.3rem 0;
+    }
+    .book-page-header { padding: 7rem 1.25rem 2.5rem; }
+    .pdf-grid { gap: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="noise-overlay"></div>
+
+<!-- NAV -->
+<nav id="main-nav" class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 md:px-16 py-5" style="background: linear-gradient(to bottom, rgba(10,9,5,0.97), transparent);">
+  <span class="font-cinzel text-sm tracking-widest text-parchment uppercase cursor-pointer" onclick="showView('home')">The Austen Archive</span>
+  <div class="hidden md:flex items-center gap-8">
+    <span class="nav-link" onclick="showView('home'); setTimeout(()=>document.getElementById('novels-anchor')?.scrollIntoView({behavior:'smooth'}),50)">Novels</span>
+    <span class="nav-link" onclick="showView('home'); setTimeout(()=>document.getElementById('context-anchor')?.scrollIntoView({behavior:'smooth'}),50)">Context</span>
+    <span class="nav-link" onclick="showView('home'); setTimeout(()=>document.getElementById('about-anchor')?.scrollIntoView({behavior:'smooth'}),50)">Archive</span>
+  </div>
+  <div class="font-cinzel text-xs tracking-widest text-sepia-dark uppercase hidden md:block">Est. 1815</div>
+</nav>
+
+<!-- ============================================================ -->
+<!-- HOME VIEW -->
+<!-- ============================================================ -->
+<div id="view-home" class="view active">
+
+  <!-- HERO -->
+  <section class="hero-bg min-h-screen flex flex-col items-center justify-center relative px-6 text-center overflow-hidden">
+    <div class="hero-ornament font-cinzel text-parchment select-none" style="font-size: 30vw; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: 900; letter-spacing: -0.05em;">JA</div>
+
+    <div class="relative z-10 max-w-4xl mx-auto" style="padding-top: 6rem;">
+      <p class="font-sc text-xs tracking-widest text-sepia uppercase mb-8" style="animation: fadeUp 1s ease forwards; opacity: 0;">
+        Literary Analysis — Regency England
+      </p>
+      <div class="mb-2">
+        <h1 class="font-cinzel text-parchment font-bold leading-none" style="font-size: clamp(3.5rem, 10vw, 9rem); animation: fadeUp 1s ease 0.2s forwards; opacity: 0;">
+          Jane Austen
+        </h1>
+      </div>
+      <div class="sepia-line my-8 max-w-sm mx-auto"></div>
+      <p class="font-garamond italic text-xl md:text-2xl text-parchment opacity-70 mb-3" style="animation: fadeUp 1s ease 0.4s forwards; opacity: 0;">
+        An Examination of Society, Wit &amp; Romance
+      </p>
+      <blockquote class="font-garamond italic text-base md:text-lg max-w-xl mx-auto mt-6 mb-10" style="color: rgba(200,169,110,0.6); animation: fadeUp 1s ease 0.6s forwards; opacity: 0; line-height: 1.9;">
+        "The person, be it gentleman or lady, who has not pleasure in a good novel,<br class="hidden md:block"> must be intolerably stupid."
+      </blockquote>
+      <button onclick="document.getElementById('novels-anchor').scrollIntoView({behavior:'smooth'})" class="inline-block font-cinzel text-xs tracking-widest uppercase px-8 py-4 border border-sepia text-sepia hover:bg-sepia hover:text-ink transition-all duration-500" style="animation: fadeUp 1s ease 0.8s forwards; opacity: 0;">
+        Enter the Archive
+      </button>
+    </div>
+
+    <div class="absolute bottom-0 left-0 right-0 h-32" style="background: linear-gradient(to bottom, transparent, #0a0905);"></div>
+    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2" style="animation: fadeUp 1s ease 1.2s forwards; opacity: 0;">
+      <span class="font-cinzel text-xs tracking-widest text-sepia-dark uppercase" style="font-size:0.6rem;">Scroll</span>
+      <div style="width:1px; height:40px; background: linear-gradient(to bottom, #c8a96e, transparent);"></div>
+    </div>
+  </section>
+
+  <!-- NOVELS LIST -->
+  <section id="novels-anchor" class="relative px-6 md:px-16 lg:px-24 py-24">
+    <div class="mb-16 max-w-6xl mx-auto">
+      <p class="font-cinzel text-xs tracking-widest text-sepia uppercase mb-4">The Complete Works</p>
+      <div class="flex items-end gap-6">
+        <h2 class="font-cinzel text-4xl md:text-6xl text-parchment font-semibold leading-none">Six Novels</h2>
+        <div class="flex-1 sepia-line mb-3 hidden md:block"></div>
+        <span class="font-garamond italic text-sepia-dark text-lg hidden md:block">1811 — 1817</span>
+      </div>
+    </div>
+    <div class="max-w-6xl mx-auto">
+      <div id="novel-list" style="border-top: 1px solid rgba(200, 169, 110, 0.15);"></div>
+    </div>
+  </section>
+
+  <!-- CONTEXT -->
+  <section id="context-anchor" class="relative px-6 md:px-16 lg:px-24 py-24" style="background: linear-gradient(to bottom, #0a0905, #0f0d08, #0a0905);">
+    <div class="max-w-6xl mx-auto">
+      <div class="grid md:grid-cols-2 gap-16 items-center">
+        <div>
+          <p class="font-cinzel text-xs tracking-widest text-sepia uppercase mb-6">Historical Context</p>
+          <h2 class="font-cinzel text-3xl md:text-5xl text-parchment font-semibold leading-tight mb-8">Regency<br>England</h2>
+          <div class="sepia-line mb-8" style="max-width: 200px;"></div>
+          <p class="font-garamond text-lg leading-loose" style="color: rgba(232,220,200,0.6);">
+            Jane Austen wrote during a period of profound social transformation — the Napoleonic Wars, the Industrial Revolution's dawn, and a rigid class system that determined the entire trajectory of a woman's life through the institution of marriage.
+          </p>
+          <p class="font-garamond text-lg leading-loose mt-4" style="color: rgba(232,220,200,0.6);">
+            Her genius lay in excavating this world not through broad strokes, but through the intimate theater of drawing rooms, country estates, and whispered conversations — finding the universe in a teacup.
+          </p>
+        </div>
+        <div class="grid grid-cols-2 gap-px" style="background: rgba(200,169,110,0.1);">
+          <div class="p-8" style="background: #0f0d08;"><div class="font-cinzel text-4xl text-sepia mb-2">6</div><div class="font-garamond italic text-sm text-sepia-dark">Completed Novels</div></div>
+          <div class="p-8" style="background: #0f0d08;"><div class="font-cinzel text-4xl text-sepia mb-2">41</div><div class="font-garamond italic text-sm text-sepia-dark">Years of Life</div></div>
+          <div class="p-8" style="background: #0f0d08;"><div class="font-cinzel text-4xl text-sepia mb-2">200+</div><div class="font-garamond italic text-sm text-sepia-dark">Years of Influence</div></div>
+          <div class="p-8" style="background: #0f0d08;"><div class="font-cinzel text-4xl text-sepia mb-2">∞</div><div class="font-garamond italic text-sm text-sepia-dark">Adaptations &amp; Retellings</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="about-anchor" class="px-6 md:px-16 lg:px-24 py-24">
+    <div class="max-w-2xl mx-auto text-center">
+      <p class="font-cinzel text-xs tracking-widest text-sepia uppercase mb-6">About This Archive</p>
+      <div class="sepia-line mb-8"></div>
+      <p class="font-garamond text-xl italic leading-loose" style="color: rgba(232,220,200,0.65);">
+        This collection serves as a thoughtful, close-reading companion to Jane Austen's enduring works — examining narrative structure, social critique, and the razor-sharp wit that has made her one of the most studied writers in the English literary canon.
+      </p>
+      <div class="footer-rule"></div>
+      <p class="font-cinzel text-xs tracking-widest text-sepia-dark uppercase">The Austen Archive © 2026</p>
+    </div>
+  </section>
+
+</div><!-- end view-home -->
+
+
+<!-- ============================================================ -->
+<!-- BOOK VIEW -->
+<!-- ============================================================ -->
+<div id="view-book" class="view">
+
+  <!-- BOOK PAGE HEADER -->
+  <div class="book-page-header">
+    <div class="max-w-6xl mx-auto relative z-10">
+      <button class="back-btn mb-8" onclick="showView('home')">
+        ← Back to Archive
+      </button>
+      <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+        <div>
+          <p id="bp-year" class="font-cinzel text-xs tracking-widest text-sepia-dark uppercase mb-3"></p>
+          <h1 id="bp-title" class="font-cinzel text-parchment font-semibold leading-tight mb-2" style="font-size: clamp(2.2rem, 5vw, 4.5rem);"></h1>
+          <p id="bp-subtitle" class="font-garamond italic text-sepia-dark text-lg"></p>
+        </div>
+        <div id="bp-themes" class="flex flex-wrap gap-1 md:max-w-xs md:justify-end"></div>
+      </div>
+      <div class="sepia-line mt-8"></div>
+
+      <!-- Stats row -->
+      <div id="bp-stats" class="stat-block mt-0" style="margin-top:0; border-top: none;"></div>
+
+      <!-- Quote -->
+      <blockquote id="bp-quote" class="font-garamond italic text-lg md:text-xl mt-6 mb-2 pl-5" style="border-left: 2px solid #c8a96e; color: rgba(200,169,110,0.8); line-height:1.8;"></blockquote>
+    </div>
+  </div>
+
+  <!-- PDF SECTION -->
+  <div class="px-6 md:px-16 lg:px-24 py-16" style="background: #0a0905;">
+    <div class="max-w-6xl mx-auto">
+      <div class="mb-10">
+        <p class="font-cinzel text-xs tracking-widest text-sepia uppercase mb-3">Primary Documents</p>
+        <p class="font-garamond italic text-sepia-dark">Four documents for scholarly exploration. Paste a PDF URL into any slot to load it.</p>
+      </div>
+      <div class="pdf-grid" id="pdf-grid"></div>
+    </div>
+  </div>
+
+  <!-- ANALYSIS SECTION -->
+  <div class="px-6 md:px-16 lg:px-24 pb-24" style="background: #0a0905;">
+    <div class="max-w-6xl mx-auto">
+      <div class="sepia-line mb-12"></div>
+      <div class="grid md:grid-cols-2 gap-12" id="bp-analysis"></div>
+    </div>
+  </div>
+
+</div><!-- end view-book -->
+
+
+<script>
+const PDF_SLOTS = [
+  { key: 'original',  label: 'Original Text',      sub: 'Primary source document' },
+  { key: 'critical',  label: 'Critical Essay',      sub: 'Scholarly analysis' },
+  { key: 'study',     label: 'Study Guide',         sub: 'Reading companion' },
+  { key: 'context',   label: 'Historical Context',  sub: 'Period & background' },
+];
+
+const books = [
+  {
+    id: 'sense', year: '1811', roman: 'I',
+    title: 'Sense and Sensibility', subtitle: 'The Dashwood Sisters',
+    themes: ['Reason vs. Emotion', 'Sisterhood', 'Financial Precarity', 'Heartbreak'],
+    quote: '"Know your own happiness. You want nothing but patience — or give it a more fascinating name, call it hope."',
+    stats: [{ v: '1811', l: 'Published' }, { v: '3 vols', l: 'Structure' }, { v: '£150', l: "Austen's Profit" }],
+    
+  },
+  {
+    id: 'pride', year: '1813', roman: 'II',
+    title: 'Pride and Prejudice', subtitle: 'The Bennet Daughters',
+    themes: ['First Impressions', 'Class Mobility', 'Female Agency', 'Irony & Wit'],
+    quote: '"It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife."',
+    stats: [{ v: '1813', l: 'Published' }, { v: '£110', l: "Austen's Sale" }, { v: '1st', l: 'Best-Selling Novel' }],
+    
+  },
+  {
+    id: 'mansfield', year: '1814', roman: 'III',
+    title: 'Mansfield Park', subtitle: 'The Education of Fanny Price',
+    themes: ['Moral Constancy', 'Corruption & Wealth', 'Colonialism', 'Integrity Under Pressure'],
+    quote: '"We have all a better guide in ourselves, if we would attend to it, than any other person can be."',
+    stats: [{ v: '1814', l: 'Published' }, { v: '3 vols', l: 'Structure' }, { v: 'Contested', l: 'Critical Reception' }],
+    
+  },
+  {
+    id: 'emma', year: '1815', roman: 'IV',
+    title: 'Emma', subtitle: 'The Perils of Imagination',
+    themes: ['Self-Delusion', 'Class Snobbery', 'Female Intelligence', 'The Unreliable Mind'],
+    quote: '"I always deserve the best treatment because I never put up with any other."',
+    stats: [{ v: '1815', l: 'Published' }, { v: '3 vols', l: 'Structure' }, { v: '£500', l: 'Highest Earned' }],
+    
+  },
+  {
+    id: 'persuasion', year: '1817', roman: 'V',
+    title: 'Persuasion', subtitle: 'The Weight of Second Chances',
+    themes: ['Constancy', 'Regret & Time', 'Female Resolve', 'Romantic Maturity'],
+    quote: '"You pierce my soul. I am half agony, half hope."',
+    stats: [{ v: '1817', l: 'Published Posthumously' }, { v: '2 vols', l: 'Structure' }, { v: 'Final', l: 'Completed Novel' }],
+    
+  },
+  {
+    id: 'northanger', year: '1817', roman: 'VI',
+    title: 'Northanger Abbey', subtitle: "The Satirist's Apprentice",
+    themes: ['Gothic Parody', 'The Danger of Fiction', 'Coming of Age', 'Social Literacy'],
+    quote: '"The person, be it gentleman or lady, who has not pleasure in a good novel, must be intolerably stupid."',
+    stats: [{ v: '1817', l: 'Published' }, { v: 'Earliest', l: 'Written c.1798–1803' }, { v: 'Satirical', l: 'Primary Mode' }],
+    
+  }
+];
+
+// ---- PDF URL storage per-book, per-slot ----
+const pdfUrls = {};
+
+function getPdfKey(bookId, slotKey) { return bookId + '_' + slotKey; }
+
+function savePdfUrl(bookId, slotKey, url) {
+  pdfUrls[getPdfKey(bookId, slotKey)] = url;
+}
+
+function getSavedUrl(bookId, slotKey) {
+  return pdfUrls[getPdfKey(bookId, slotKey)] || '';
+}
+
+// ---- VIEWS ----
+function showView(name, bookId) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  window.scrollTo(0, 0);
+
+  if (name === 'book' && bookId) renderBookPage(bookId);
+}
+
+// ---- HOME LIST ----
+function buildList() {
+  const container = document.getElementById('novel-list');
+  books.forEach(book => {
+    const row = document.createElement('div');
+    row.className = 'book-entry';
+    row.onclick = () => showView('book', book.id);
+    row.innerHTML = `
+      <div class="book-number text-right">
+        <div style="font-size:1.4rem; opacity:0.4;">${book.roman}</div>
+        <div style="margin-top:2px;">${book.year}</div>
+      </div>
+      <div>
+        <div class="book-title-text">${book.title}</div>
+        <div class="book-meta">${book.subtitle}</div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="hidden md:flex gap-1 flex-wrap justify-end" style="max-width:200px;">
+          ${book.themes.slice(0,2).map(t => `<span class="theme-pill" style="font-size:0.65rem; padding: 0.2rem 0.6rem;">${t}</span>`).join('')}
+        </div>
+        <span class="arrow-icon">→</span>
+      </div>
+    `;
+    container.appendChild(row);
+  });
+}
+
+// ---- BOOK PAGE ----
+function renderBookPage(bookId) {
+  const book = books.find(b => b.id === bookId);
+  if (!book) return;
+
+  document.getElementById('bp-year').textContent = book.year;
+  document.getElementById('bp-title').textContent = book.title;
+  document.getElementById('bp-subtitle').textContent = book.subtitle;
+  document.getElementById('bp-quote').textContent = book.quote;
+
+  // Themes
+  document.getElementById('bp-themes').innerHTML =
+    book.themes.map(t => `<span class="theme-pill" style="font-size:0.7rem;">${t}</span>`).join('');
+
+  // Stats
+  document.getElementById('bp-stats').innerHTML =
+    book.stats.map(s => `<div class="stat-item"><div class="stat-value">${s.v}</div><div class="stat-label">${s.l}</div></div>`).join('');
+
+  // PDF grid
+  const grid = document.getElementById('pdf-grid');
+  grid.innerHTML = '';
+  PDF_SLOTS.forEach(slot => {
+    const savedUrl = getSavedUrl(bookId, slot.key);
+    const cardId = `pdf-card-${bookId}-${slot.key}`;
+    const iframeId = `iframe-${bookId}-${slot.key}`;
+    const inputId = `input-${bookId}-${slot.key}`;
+
+    const card = document.createElement('div');
+    card.className = 'pdf-card';
+    card.id = cardId;
+    card.innerHTML = `
+      <div class="pdf-card-header">
+        <div class="pdf-doc-icon">PDF</div>
+        <div>
+          <div class="pdf-label">${slot.label}</div>
+          <div class="pdf-sublabel">${slot.sub}</div>
+        </div>
+      </div>
+      <div class="pdf-embed-container" id="embed-${bookId}-${slot.key}">
+        ${savedUrl
+          ? `<iframe id="${iframeId}" src="${savedUrl}" title="${slot.label}"></iframe>`
+          : `<div class="pdf-placeholder">
+              <div class="pdf-placeholder-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(200,169,110,0.25)" stroke-width="1.5">
+                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                  <polyline points="14,2 14,8 20,8"/>
+                  <line x1="12" y1="18" x2="12" y2="12"/>
+                  <line x1="9" y1="15" x2="15" y2="15"/>
+                </svg>
+              </div>
+              <div class="pdf-placeholder-title">No Document Loaded</div>
+              <div class="pdf-placeholder-desc">Paste a PDF URL below and press Load to embed your document here.</div>
+            </div>`
+        }
+      </div>
+      <div class="pdf-url-input-row">
+        <input
+          id="${inputId}"
+          class="pdf-url-input"
+          type="url"
+          placeholder="Paste PDF URL here…"
+          value="${savedUrl}"
+          onkeydown="if(event.key==='Enter') loadPdf('${bookId}','${slot.key}')"
+        />
+        <button class="pdf-load-btn" onclick="loadPdf('${bookId}','${slot.key}')">Load</button>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+
+  // Analysis
+  document.getElementById('bp-analysis').innerHTML = book.analysis.map(a => `
+    <div>
+      <p class="font-cinzel text-xs tracking-widest text-sepia uppercase mb-4">${a.label}</p>
+      <p class="font-garamond text-lg leading-loose" style="color: rgba(232,220,200,0.65);">${a.text}</p>
+    </div>
+  `).join('');
+}
+
+function loadPdf(bookId, slotKey) {
+  const input = document.getElementById(`input-${bookId}-${slotKey}`);
+  const url = input.value.trim();
+  const embedEl = document.getElementById(`embed-${bookId}-${slotKey}`);
+
+  if (!url) return;
+  savePdfUrl(bookId, slotKey, url);
+
+  embedEl.innerHTML = `<iframe id="iframe-${bookId}-${slotKey}" src="${url}" title="${slotKey}" style="width:100%;height:100%;min-height:460px;border:none;display:block;"></iframe>`;
+}
+
+buildList();
+</script>
+</body>
+</html>
