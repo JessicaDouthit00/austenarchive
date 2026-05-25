@@ -334,6 +334,7 @@ tailwind.config = {
     max-width: 200px;
   }
 
+  /* URL input row — only shown for slots without a pre-filled path */
   .pdf-url-input-row {
     padding: 0.75rem 1rem;
     border-top: 1px solid rgba(200, 169, 110, 0.08);
@@ -549,7 +550,7 @@ tailwind.config = {
     <div class="max-w-6xl mx-auto">
       <div class="mb-10">
         <p class="font-cinzel text-xs tracking-widest text-sepia uppercase mb-3">Primary Documents</p>
-        <p class="font-garamond italic text-sepia-dark">Four documents for scholarly exploration. Paste a PDF URL into any slot to load it.</p>
+        <p class="font-garamond italic text-sepia-dark">Two pre-loaded documents for scholarly exploration. Paste a URL into any empty slot to load additional PDFs.</p>
       </div>
       <div class="pdf-grid" id="pdf-grid"></div>
     </div>
@@ -567,13 +568,21 @@ tailwind.config = {
 
 
 <script>
+// ------------------------------------------------------------
+// PDF SLOT DEFINITIONS
+// Slots 1 & 2 are pre-filled from the repo; 3 & 4 accept user URLs.
+// Paths follow the pattern: docs/{bookId}/pdf{n}.pdf
+// ------------------------------------------------------------
 const PDF_SLOTS = [
-  { key: 'original',  label: 'Original Text',      sub: 'Primary source document' },
-  { key: 'critical',  label: 'Critical Essay',      sub: 'Scholarly analysis' },
-  { key: 'study',     label: 'Study Guide',         sub: 'Reading companion' },
-  { key: 'context',   label: 'Historical Context',  sub: 'Period & background' },
+  { key: 'pdf1', label: 'Primary Text',       sub: 'Original source document',  prefilled: true  },
+  { key: 'pdf2', label: 'Critical Essay',     sub: 'Scholarly analysis',         prefilled: true  },
+  { key: 'pdf3', label: 'Study Guide',        sub: 'Reading companion',          prefilled: false },
+  { key: 'pdf4', label: 'Historical Context', sub: 'Period & background',        prefilled: false },
 ];
 
+// ------------------------------------------------------------
+// BOOKS DATA
+// ------------------------------------------------------------
 const books = [
   {
     id: 'sense', year: '1811', roman: 'I',
@@ -581,7 +590,16 @@ const books = [
     themes: ['Reason vs. Emotion', 'Sisterhood', 'Financial Precarity', 'Heartbreak'],
     quote: '"Know your own happiness. You want nothing but patience — or give it a more fascinating name, call it hope."',
     stats: [{ v: '1811', l: 'Published' }, { v: '3 vols', l: 'Structure' }, { v: '£150', l: "Austen's Profit" }],
-    
+    analysis: [
+      {
+        label: 'Narrative Architecture',
+        text: 'Austen structures the novel as a sustained counterpoint between Elinor and Marianne — sense and sensibility made flesh. Every plot event is filtered through their divergent temperaments, so that the same ball, the same letter, the same absence carries entirely different emotional weight depending on whose consciousness we inhabit.'
+      },
+      {
+        label: 'Social Critique',
+        text: 'Beneath its romantic surface, the novel is a razor-sharp examination of the property laws that left women financially destitute at a father\'s death. The Dashwood sisters\' reduced circumstances are not a backdrop — they are the engine of every plot necessity, every compromise, every marriage calculation the characters must endure.'
+      }
+    ]
   },
   {
     id: 'pride', year: '1813', roman: 'II',
@@ -589,7 +607,16 @@ const books = [
     themes: ['First Impressions', 'Class Mobility', 'Female Agency', 'Irony & Wit'],
     quote: '"It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife."',
     stats: [{ v: '1813', l: 'Published' }, { v: '£110', l: "Austen's Sale" }, { v: '1st', l: 'Best-Selling Novel' }],
-    
+    analysis: [
+      {
+        label: 'The Ironic Opening',
+        text: 'The novel\'s famous first sentence performs exactly the irony it describes — appearing to state a social truth while quietly exposing its absurdity. Austen never lets her narrator become earnest; every observation is angled, lit from below, designed to reveal the gap between what society says and what it means.'
+      },
+      {
+        label: 'Elizabeth as Radical Heroine',
+        text: 'Elizabeth Bennet is radical not because she refuses marriage, but because she refuses to perform the deference it demands. Her wit is not decoration — it is her primary instrument of autonomy in a world that offers women almost no other. Darcy must learn to see her clearly; she must learn to see herself without flattering distortion.'
+      }
+    ]
   },
   {
     id: 'mansfield', year: '1814', roman: 'III',
@@ -597,7 +624,16 @@ const books = [
     themes: ['Moral Constancy', 'Corruption & Wealth', 'Colonialism', 'Integrity Under Pressure'],
     quote: '"We have all a better guide in ourselves, if we would attend to it, than any other person can be."',
     stats: [{ v: '1814', l: 'Published' }, { v: '3 vols', l: 'Structure' }, { v: 'Contested', l: 'Critical Reception' }],
-    
+    analysis: [
+      {
+        label: 'The Unheroic Heroine',
+        text: 'Fanny Price is deliberately unglamorous — passive, sickly, without Elizabeth\'s wit or Anne\'s quiet elegance. Austen\'s gamble is that we will come to see Fanny\'s stillness as the novel\'s moral centre. Where everyone around her performs and adapts, Fanny simply refuses. Her constancy is not weakness; it is the only genuine virtue on display.'
+      },
+      {
+        label: 'Theatricality as Moral Lens',
+        text: 'The amateur theatricals episode functions as the novel\'s moral laboratory. Every character\'s willingness — or refusal — to perform a role reveals their inner disposition toward truth, propriety, and self-deception. Sir Thomas\'s return and the abrupt cancellation of the play is Austen\'s most dramatically charged scene: reality reasserts itself over performance.'
+      }
+    ]
   },
   {
     id: 'emma', year: '1815', roman: 'IV',
@@ -605,7 +641,16 @@ const books = [
     themes: ['Self-Delusion', 'Class Snobbery', 'Female Intelligence', 'The Unreliable Mind'],
     quote: '"I always deserve the best treatment because I never put up with any other."',
     stats: [{ v: '1815', l: 'Published' }, { v: '3 vols', l: 'Structure' }, { v: '£500', l: 'Highest Earned' }],
-    
+    analysis: [
+      {
+        label: 'Free Indirect Discourse',
+        text: 'Emma is Austen\'s technical masterpiece. The free indirect style — where narrator and character\'s consciousness blur without quotation marks — means the reader experiences Emma\'s errors from the inside. We are seduced by her logic just as she is. The novel\'s great revelation is not merely Emma\'s but our own: we have been unreliable readers of an unreliable mind.'
+      },
+      {
+        label: 'The Comedy of Snobbery',
+        text: 'Emma\'s class prejudice is played for comedy, but Austen never lets us forget its real costs — particularly for Harriet Smith and Jane Fairfax, women whose futures depend on the whims of those above them. Emma\'s imagination is her greatest gift and her most destructive weapon, and the novel traces the long education required to bring it under moral governance.'
+      }
+    ]
   },
   {
     id: 'persuasion', year: '1817', roman: 'V',
@@ -613,7 +658,16 @@ const books = [
     themes: ['Constancy', 'Regret & Time', 'Female Resolve', 'Romantic Maturity'],
     quote: '"You pierce my soul. I am half agony, half hope."',
     stats: [{ v: '1817', l: 'Published Posthumously' }, { v: '2 vols', l: 'Structure' }, { v: 'Final', l: 'Completed Novel' }],
-    
+    analysis: [
+      {
+        label: 'Autumnal Tone',
+        text: 'Written in the last years of Austen\'s life, Persuasion carries a tenderness absent from the earlier novels. Anne Elliot is twenty-seven — practically middle-aged by Regency reckoning — and the novel\'s great subject is time: what it takes from us, what it occasionally returns. The famous concert scene, where feeling must be communicated entirely through glance and proximity, is among the most emotionally precise passages in English fiction.'
+      },
+      {
+        label: 'The Letter as Confession',
+        text: 'Wentworth\'s letter — "You pierce my soul" — arrives as the novel\'s emotional climax and its formal rupture. For once, Austen abandons all ironic distance. The letter is Wentworth unguarded, and its directness, after 200 pages of social performance and concealment, lands with the force of pure feeling. Austen earns it completely.'
+      }
+    ]
   },
   {
     id: 'northanger', year: '1817', roman: 'VI',
@@ -621,29 +675,30 @@ const books = [
     themes: ['Gothic Parody', 'The Danger of Fiction', 'Coming of Age', 'Social Literacy'],
     quote: '"The person, be it gentleman or lady, who has not pleasure in a good novel, must be intolerably stupid."',
     stats: [{ v: '1817', l: 'Published' }, { v: 'Earliest', l: 'Written c.1798–1803' }, { v: 'Satirical', l: 'Primary Mode' }],
-    
+    analysis: [
+      {
+        label: 'Parody as Education',
+        text: 'Catherine Morland\'s Gothic fantasies are not merely comic — they are the novel\'s diagnostic instrument. By dramatising what happens when a reader applies the wrong genre to real life, Austen argues implicitly for a better kind of reading: attentive, sceptical, alert to the difference between the dramatic and the merely dramatic-seeming.'
+      },
+      {
+        label: 'The Narrator\'s Intrusions',
+        text: 'Northanger Abbey is Austen\'s most nakedly self-conscious novel. The narrator periodically steps forward to address the reader directly, commenting on the conventions of fiction itself. These intrusions are not mere whimsy — they are the scaffolding of a sustained argument about how novels teach us to see, and how badly they can mislead us when we read them too credulously.'
+      }
+    ]
   }
 ];
 
-// ---- PDF URL storage per-book, per-slot ----
+// ---- PDF URL storage (for user-added slots 3 & 4) ----
 const pdfUrls = {};
-
 function getPdfKey(bookId, slotKey) { return bookId + '_' + slotKey; }
-
-function savePdfUrl(bookId, slotKey, url) {
-  pdfUrls[getPdfKey(bookId, slotKey)] = url;
-}
-
-function getSavedUrl(bookId, slotKey) {
-  return pdfUrls[getPdfKey(bookId, slotKey)] || '';
-}
+function savePdfUrl(bookId, slotKey, url) { pdfUrls[getPdfKey(bookId, slotKey)] = url; }
+function getSavedUrl(bookId, slotKey) { return pdfUrls[getPdfKey(bookId, slotKey)] || ''; }
 
 // ---- VIEWS ----
 function showView(name, bookId) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById('view-' + name).classList.add('active');
   window.scrollTo(0, 0);
-
   if (name === 'book' && bookId) renderBookPage(bookId);
 }
 
@@ -684,54 +739,50 @@ function renderBookPage(bookId) {
   document.getElementById('bp-subtitle').textContent = book.subtitle;
   document.getElementById('bp-quote').textContent = book.quote;
 
-  // Themes
   document.getElementById('bp-themes').innerHTML =
     book.themes.map(t => `<span class="theme-pill" style="font-size:0.7rem;">${t}</span>`).join('');
 
-  // Stats
   document.getElementById('bp-stats').innerHTML =
     book.stats.map(s => `<div class="stat-item"><div class="stat-value">${s.v}</div><div class="stat-label">${s.l}</div></div>`).join('');
 
   // PDF grid
   const grid = document.getElementById('pdf-grid');
   grid.innerHTML = '';
-  PDF_SLOTS.forEach(slot => {
-    const savedUrl = getSavedUrl(bookId, slot.key);
-    const cardId = `pdf-card-${bookId}-${slot.key}`;
-    const iframeId = `iframe-${bookId}-${slot.key}`;
-    const inputId = `input-${bookId}-${slot.key}`;
+
+  PDF_SLOTS.forEach((slot, i) => {
+    // Pre-filled slots use a repo-relative path: docs/{bookId}/pdf1.pdf, pdf2.pdf
+    const repoPath = slot.prefilled ? `docs/${bookId}/${slot.key}.pdf` : null;
+    const savedUrl = !slot.prefilled ? getSavedUrl(bookId, slot.key) : '';
+    const embedSrc = repoPath || savedUrl;
 
     const card = document.createElement('div');
     card.className = 'pdf-card';
-    card.id = cardId;
-    card.innerHTML = `
-      <div class="pdf-card-header">
-        <div class="pdf-doc-icon">PDF</div>
-        <div>
-          <div class="pdf-label">${slot.label}</div>
-          <div class="pdf-sublabel">${slot.sub}</div>
-        </div>
-      </div>
-      <div class="pdf-embed-container" id="embed-${bookId}-${slot.key}">
-        ${savedUrl
-          ? `<iframe id="${iframeId}" src="${savedUrl}" title="${slot.label}"></iframe>`
-          : `<div class="pdf-placeholder">
-              <div class="pdf-placeholder-icon">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(200,169,110,0.25)" stroke-width="1.5">
-                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-                  <polyline points="14,2 14,8 20,8"/>
-                  <line x1="12" y1="18" x2="12" y2="12"/>
-                  <line x1="9" y1="15" x2="15" y2="15"/>
-                </svg>
-              </div>
-              <div class="pdf-placeholder-title">No Document Loaded</div>
-              <div class="pdf-placeholder-desc">Paste a PDF URL below and press Load to embed your document here.</div>
-            </div>`
-        }
-      </div>
+
+    // Build embed area
+    let embedHtml;
+    if (embedSrc) {
+      embedHtml = `<iframe src="${embedSrc}" title="${slot.label}" style="width:100%;height:100%;min-height:460px;border:none;display:block;"></iframe>`;
+    } else {
+      embedHtml = `
+        <div class="pdf-placeholder">
+          <div class="pdf-placeholder-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(200,169,110,0.25)" stroke-width="1.5">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <polyline points="14,2 14,8 20,8"/>
+              <line x1="12" y1="18" x2="12" y2="12"/>
+              <line x1="9" y1="15" x2="15" y2="15"/>
+            </svg>
+          </div>
+          <div class="pdf-placeholder-title">No Document Loaded</div>
+          <div class="pdf-placeholder-desc">Paste a PDF URL below and press Load to embed your document here.</div>
+        </div>`;
+    }
+
+    // URL input row — only for non-prefilled slots
+    const inputRowHtml = !slot.prefilled ? `
       <div class="pdf-url-input-row">
         <input
-          id="${inputId}"
+          id="input-${bookId}-${slot.key}"
           class="pdf-url-input"
           type="url"
           placeholder="Paste PDF URL here…"
@@ -739,7 +790,20 @@ function renderBookPage(bookId) {
           onkeydown="if(event.key==='Enter') loadPdf('${bookId}','${slot.key}')"
         />
         <button class="pdf-load-btn" onclick="loadPdf('${bookId}','${slot.key}')">Load</button>
+      </div>` : '';
+
+    card.innerHTML = `
+      <div class="pdf-card-header">
+        <div class="pdf-doc-icon">PDF</div>
+        <div>
+          <div class="pdf-label">${slot.label}</div>
+          <div class="pdf-sublabel">${slot.sub}${slot.prefilled ? '' : ' — paste a URL below'}</div>
+        </div>
       </div>
+      <div class="pdf-embed-container" id="embed-${bookId}-${slot.key}">
+        ${embedHtml}
+      </div>
+      ${inputRowHtml}
     `;
     grid.appendChild(card);
   });
@@ -757,11 +821,9 @@ function loadPdf(bookId, slotKey) {
   const input = document.getElementById(`input-${bookId}-${slotKey}`);
   const url = input.value.trim();
   const embedEl = document.getElementById(`embed-${bookId}-${slotKey}`);
-
   if (!url) return;
   savePdfUrl(bookId, slotKey, url);
-
-  embedEl.innerHTML = `<iframe id="iframe-${bookId}-${slotKey}" src="${url}" title="${slotKey}" style="width:100%;height:100%;min-height:460px;border:none;display:block;"></iframe>`;
+  embedEl.innerHTML = `<iframe src="${url}" title="${slotKey}" style="width:100%;height:100%;min-height:460px;border:none;display:block;"></iframe>`;
 }
 
 buildList();
